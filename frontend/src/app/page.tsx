@@ -1,114 +1,96 @@
-import MetricCard from "@/components/ui/MetricCard";
-import { getTodaySummary } from "@/lib/api";
 import Link from "next/link";
+import MetricCard from "@/components/ui/MetricCard";
+import { getStatistics, getTodaySummary } from "@/lib/api";
+
+const CATEGORY_TILES = [
+  { name: "Sleep", href: "/sleep", color: "from-indigo-50 to-violet-100", caption: "Recovery rhythms" },
+  { name: "Gym", href: "/gym", color: "from-emerald-50 to-green-100", caption: "Training performance" },
+  { name: "Money", href: "/money", color: "from-amber-50 to-yellow-100", caption: "Cashflow intelligence" },
+  { name: "Habits", href: "/habits", color: "from-sky-50 to-cyan-100", caption: "Consistency board" },
+  { name: "Statistics", href: "/statistics", color: "from-rose-50 to-pink-100", caption: "LifeOS yearly pulse" },
+  { name: "Goals", href: "/goals", color: "from-orange-50 to-amber-100", caption: "Milestone planning" },
+  { name: "Calendar", href: "/calendar", color: "from-slate-50 to-slate-100", caption: "Contribution timeline" },
+  { name: "Movies", href: "/movies", color: "from-purple-50 to-fuchsia-100", caption: "Poster-rich media wall" },
+];
 
 function formatSleep(minutes: number): string {
-    const h = Math.floor(minutes / 60);
-    const m = minutes % 60;
-    return `${h}h ${m}m`;
+  const hours = Math.floor(minutes / 60);
+  const remaining = minutes % 60;
+  return `${hours}h ${remaining}m`;
 }
 
-export default async function DashboardPage() {
-    let today;
+export default async function HomePage() {
+  const [today, stats] = await Promise.all([
+    getTodaySummary().catch(() => ({
+      date: new Date().toISOString().split("T")[0],
+      steps: 0,
+      sleep_minutes: 0,
+      resting_hr: 0,
+      total_spent: 0,
+      total_income: 0,
+      habits_done: 0,
+      habits_total: 5,
+    })),
+    getStatistics().catch(() => ({} as Record<string, unknown>)),
+  ]);
 
-    try {
-        today = await getTodaySummary();
-    } catch (error) {
-        // Fallback: render error state
-        return (
-            <div className="flex flex-col items-center justify-center h-full">
-                <div className="bg-gray-900 border border-gray-800 rounded-xl p-8 max-w-md text-center">
-                    <h1 className="text-xl font-semibold text-white mb-2">
-                        Cannot connect to API
-                    </h1>
-                    <p className="text-gray-400 text-sm mb-4">
-                        Make sure the backend is running at{" "}
-                        <code className="text-brand-400">http://localhost:8000</code> and
-                        the database has been seeded.
-                    </p>
-                    <div className="text-xs text-gray-600 bg-gray-800 rounded p-3 text-left">
-                        <p>docker compose up --build</p>
-                        <p>docker compose exec backend alembic upgrade head</p>
-                        <p>docker compose exec backend python -m app.seed</p>
-                    </div>
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold text-white">LifeOS Categories</h1>
-                <p className="text-sm text-gray-400 mt-1">Choose a category from the menu or cards below.</p>
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-                <MetricCard
-                    title="Today's Steps"
-                    value={today.steps.toLocaleString()}
-                    icon={
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-                        </svg>
-                    }
-                    trend={today.steps >= 8000 ? "up" : today.steps >= 5000 ? "flat" : "down"}
-                />
-                <MetricCard
-                    title="Today's Spend"
-                    value={`$${today.total_spent.toFixed(2)}`}
-                    icon={
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1" />
-                        </svg>
-                    }
-                    trend={today.total_spent < 50 ? "up" : today.total_spent < 150 ? "flat" : "down"}
-                />
-                <MetricCard
-                    title="Habits"
-                    value={`${today.habits_done}/${today.habits_total}`}
-                    icon={
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                    }
-                    trend={
-                        today.habits_done === today.habits_total
-                            ? "up"
-                            : today.habits_done > 0
-                                ? "flat"
-                                : "down"
-                    }
-                />
-                <MetricCard
-                    title="Sleep"
-                    value={formatSleep(today.sleep_minutes)}
-                    icon={
-                        <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M20.354 15.354A9 9 0 018.646 3.646 9.003 9.003 0 0012 21a9.003 9.003 0 008.354-5.646z" />
-                        </svg>
-                    }
-                    trend={today.sleep_minutes >= 420 ? "up" : today.sleep_minutes >= 360 ? "flat" : "down"}
-                />
-            </div>
-
-            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
-                {[
-                    ["Sleep", "/sleep"],
-                    ["Gym", "/gym"],
-                    ["Money", "/money"],
-                    ["Habits", "/habits"],
-                    ["Statistics", "/statistics"],
-                    ["Goals", "/goals"],
-                    ["Calendar", "/calendar"],
-                    ["Movies", "/movies"],
-                ].map(([name, href]) => (
-                    <Link key={name} href={href} className="rounded-xl border border-gray-800 bg-gray-900 p-5 hover:border-brand-500/60 transition-colors">
-                        <p className="text-white font-medium">{name}</p>
-                        <p className="text-xs text-gray-500 mt-1">Raw upload + API data view</p>
-                    </Link>
-                ))}
-            </div>
+  return (
+    <div className="space-y-6">
+      <section className="rounded-2xl border border-slate-200 bg-gradient-to-r from-indigo-50 via-violet-50 to-pink-50 p-6 shadow-sm">
+        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+          <div>
+            <p className="text-xs uppercase tracking-[0.2em] text-slate-500">LifeOS</p>
+            <h1 className="mt-1 text-3xl font-semibold tracking-tight text-slate-900">Daily Command Center</h1>
+            <p className="mt-2 max-w-2xl text-sm text-slate-600">
+              A category-first dashboard inspired by premium templates: focused modules, softer hierarchy,
+              and purpose-built layouts for each life domain.
+            </p>
+          </div>
+          <Link href="/data-tools" className="inline-flex items-center rounded-xl bg-slate-900 px-4 py-2 text-sm text-white hover:bg-slate-800">
+            Open Data Tools
+          </Link>
         </div>
-    );
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 sm:grid-cols-2 xl:grid-cols-4">
+        <MetricCard title="Today Steps" value={today.steps.toLocaleString()} trend={today.steps >= 8000 ? "up" : "flat"} icon={<span>👟</span>} />
+        <MetricCard title="Sleep" value={formatSleep(today.sleep_minutes)} trend={today.sleep_minutes >= 420 ? "up" : "down"} icon={<span>🌙</span>} />
+        <MetricCard title="Spend" value={`$${today.total_spent.toFixed(2)}`} trend={today.total_spent < 120 ? "up" : "down"} icon={<span>💸</span>} />
+        <MetricCard title="Habits" value={`${today.habits_done}/${today.habits_total}`} trend={today.habits_done > 0 ? "up" : "down"} icon={<span>✅</span>} />
+      </section>
+
+      <section className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm lg:col-span-2">
+          <h2 className="text-base font-semibold text-slate-900">Categories</h2>
+          <p className="mt-1 text-sm text-slate-500">Each page has its own differentiated visual layout.</p>
+          <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+            {CATEGORY_TILES.map((tile) => (
+              <Link
+                key={tile.name}
+                href={tile.href}
+                className={`rounded-xl border border-slate-200 bg-gradient-to-br ${tile.color} p-4 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md`}
+              >
+                <p className="text-sm font-semibold text-slate-900">{tile.name}</p>
+                <p className="mt-1 text-xs text-slate-600">{tile.caption}</p>
+              </Link>
+            ))}
+          </div>
+        </div>
+
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900">Year Snapshot</h2>
+          <div className="mt-4 space-y-3">
+            {Object.entries(stats)
+              .slice(0, 6)
+              .map(([key, value]) => (
+                <div key={key} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                  <span className="text-xs uppercase text-slate-500">{key.replaceAll("_", " ")}</span>
+                  <span className="text-sm font-semibold text-slate-800">{String(value)}</span>
+                </div>
+              ))}
+          </div>
+        </div>
+      </section>
+    </div>
+  );
 }

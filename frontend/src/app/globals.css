@@ -3,13 +3,17 @@
 @tailwind utilities;
 
 :root {
-    --foreground: #e5e7eb;
-    --background: #030712;
+    --foreground: #111827;
+    --background: #f3f4f6;
 }
 
 body {
     color: var(--foreground);
     background: var(--background);
+}
+
+* {
+    border-color: #e5e7eb;
 }
 
 /* Custom scrollbar */
@@ -19,19 +23,19 @@ body {
 }
 
 ::-webkit-scrollbar-track {
-    background: transparent;
+    background: #f3f4f6;
 }
 
 ::-webkit-scrollbar-thumb {
-    background: #374151;
+    background: #cbd5e1;
     border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-    background: #4b5563;
+    background: #94a3b8;
 }
 
-/* Leaflet fixes for dark mode */
+/* Leaflet fixes for light mode */
 .leaflet-container {
-    background: #1f2937 !important;
+    background: #f8fafc !important;
 }

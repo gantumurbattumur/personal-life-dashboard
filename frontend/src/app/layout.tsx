@@ -16,7 +16,7 @@ export default function RootLayout({
     children: React.ReactNode;
 }) {
     return (
-        <html lang="en" className="dark">
+        <html lang="en">
             <head>
                 <link
                     rel="stylesheet"
@@ -25,12 +25,14 @@ export default function RootLayout({
                     crossOrigin=""
                 />
             </head>
-            <body className={`${inter.className} bg-gray-950 text-gray-100 antialiased`}>
-                <div className="flex h-screen overflow-hidden">
+            <body className={`${inter.className} bg-slate-100 text-slate-900 antialiased`}>
+                <div className="flex h-screen overflow-hidden p-3">
                     <Sidebar />
-                    <main className="flex-1 overflow-y-auto p-6 lg:p-8">
-                        {children}
-                    </main>
+                    <div className="flex-1 overflow-hidden rounded-2xl border border-slate-200 bg-white shadow-sm">
+                        <main className="h-full overflow-y-auto p-6 lg:p-8">
+                            {children}
+                        </main>
+                    </div>
                 </div>
             </body>
         </html>

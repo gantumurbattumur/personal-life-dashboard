@@ -1,45 +1,27 @@
 interface MetricCardProps {
-    title: string;
-    value: string | number;
-    unit?: string;
-    icon: React.ReactNode;
-    trend?: "up" | "down" | "flat";
-    color?: string;
+  title: string;
+  value: string | number;
+  unit?: string;
+  icon: React.ReactNode;
+  trend?: "up" | "down" | "flat";
 }
 
-export default function MetricCard({
-    title,
-    value,
-    unit,
-    icon,
-    trend,
-    color = "brand",
-}: MetricCardProps) {
-    const trendIcon =
-        trend === "up" ? "↑" : trend === "down" ? "↓" : trend === "flat" ? "→" : "";
+export default function MetricCard({ title, value, unit, icon, trend }: MetricCardProps) {
+  const trendLabel = trend === "up" ? "+" : trend === "down" ? "-" : "=";
+  const trendClass =
+    trend === "up" ? "text-emerald-600" : trend === "down" ? "text-rose-600" : "text-slate-500";
 
-    const trendColor =
-        trend === "up"
-            ? "text-emerald-400"
-            : trend === "down"
-                ? "text-red-400"
-                : "text-gray-400";
-
-    return (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5 hover:border-gray-700 transition-colors">
-            <div className="flex items-center justify-between mb-3">
-                <span className="text-sm font-medium text-gray-400">{title}</span>
-                <span className="text-gray-500">{icon}</span>
-            </div>
-            <div className="flex items-baseline gap-2">
-                <span className="text-3xl font-bold text-white">{value}</span>
-                {unit && <span className="text-sm text-gray-400">{unit}</span>}
-                {trendIcon && (
-                    <span className={`text-sm font-medium ${trendColor}`}>
-                        {trendIcon}
-                    </span>
-                )}
-            </div>
-        </div>
-    );
+  return (
+    <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm transition-all hover:-translate-y-0.5 hover:shadow-md">
+      <div className="mb-3 flex items-center justify-between">
+        <span className="text-sm font-medium text-slate-500">{title}</span>
+        <span className="text-slate-400">{icon}</span>
+      </div>
+      <div className="flex items-end gap-2">
+        <p className="text-3xl font-semibold tracking-tight text-slate-900">{value}</p>
+        {unit && <p className="pb-1 text-xs text-slate-500">{unit}</p>}
+        {trend && <p className={`pb-1 text-xs font-semibold ${trendClass}`}>{trendLabel}</p>}
+      </div>
+    </div>
+  );
 }

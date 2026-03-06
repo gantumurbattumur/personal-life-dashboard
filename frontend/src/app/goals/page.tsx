@@ -1,72 +1,49 @@
-import { getGoals, getHabits, getHabitCalendar } from "@/lib/api";
 import GoalTracker from "@/components/GoalTracker";
-import LifeCalendar from "@/components/LifeCalendar";
-import RawApiConsole from "@/components/category/RawApiConsole";
-import type { Goal, Habit, HabitCalendarDay } from "@/lib/types";
+import { getGoals, getHabits } from "@/lib/api";
+import type { Goal, Habit } from "@/lib/types";
 
 export default async function GoalsPage() {
-    const [goals, habits, calendar]: [Goal[], Habit[], HabitCalendarDay[]] = await Promise.all([
-        getGoals().catch(() => [] as Goal[]),
-        getHabits().catch(() => [] as Habit[]),
-        getHabitCalendar().catch(() => [] as HabitCalendarDay[]),
-    ]);
+  const [goals, habits]: [Goal[], Habit[]] = await Promise.all([
+    getGoals().catch(() => [] as Goal[]),
+    getHabits().catch(() => [] as Habit[]),
+  ]);
 
-    return (
-        <div className="space-y-6">
-            <div>
-                <h1 className="text-2xl font-bold text-white">Goals & Habits</h1>
-                <p className="text-sm text-gray-400 mt-1">Track your yearly goals and daily habits</p>
-            </div>
+  return (
+    <div className="space-y-6">
+      <section className="rounded-2xl border border-orange-100 bg-gradient-to-r from-orange-50 via-amber-50 to-yellow-50 p-6 shadow-sm">
+        <p className="text-xs uppercase tracking-[0.2em] text-orange-700">Goals</p>
+        <h1 className="mt-1 text-3xl font-semibold text-slate-900">Milestone Planning Canvas</h1>
+        <p className="mt-2 text-sm text-slate-600">Planning-first layout with progress, milestones, and execution habits.</p>
+      </section>
 
-            <RawApiConsole
-                category="Goals"
-                uploadMode="none"
-                apiPath="/api/v1/dashboard/goals"
-            />
-
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                {/* Goals */}
-                <GoalTracker goals={goals} />
-
-                {/* Habits */}
-                <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-                    <h3 className="text-sm font-medium text-gray-400 mb-4">Active Habits</h3>
-                    <div className="space-y-3">
-                        {habits.map((habit) => {
-                            const isCompletedToday =
-                                habit.last_completed === new Date().toISOString().split("T")[0];
-                            return (
-                                <div
-                                    key={habit.id}
-                                    className="flex items-center justify-between py-2 px-3 rounded-lg bg-gray-800/30"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div
-                                            className={`w-3 h-3 rounded-full ${isCompletedToday ? "bg-emerald-400" : "bg-gray-600"
-                                                }`}
-                                        />
-                                        <span className="text-sm text-gray-200">{habit.name}</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <span className="text-xs text-gray-400">
-                                            🔥 {habit.streak} day{habit.streak !== 1 ? "s" : ""}
-                                        </span>
-                                    </div>
-                                </div>
-                            );
-                        })}
-
-                        {habits.length === 0 && (
-                            <p className="text-sm text-gray-500 text-center py-4">
-                                No active habits
-                            </p>
-                        )}
-                    </div>
-                </div>
-            </div>
-
-            {/* Life Calendar */}
-            <LifeCalendar data={calendar} maxHabits={habits.length || 5} />
+      <section className="grid grid-cols-1 gap-4 xl:grid-cols-3">
+        <div className="xl:col-span-2">
+          <GoalTracker goals={goals} />
         </div>
-    );
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+          <h2 className="text-base font-semibold text-slate-900">Execution Habits</h2>
+          <div className="mt-4 space-y-2">
+            {habits.map((habit) => (
+              <div key={habit.id} className="flex items-center justify-between rounded-lg border border-slate-100 bg-slate-50 px-3 py-2">
+                <span className="text-sm text-slate-800">{habit.name}</span>
+                <span className="text-xs font-semibold text-slate-500">🔥 {habit.streak}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      <section className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+        <h2 className="text-base font-semibold text-slate-900">Milestone Timeline</h2>
+        <div className="mt-4 space-y-3">
+          {goals.map((goal) => (
+            <div key={goal.id} className="relative rounded-xl border border-slate-100 bg-slate-50 px-4 py-3">
+              <p className="text-sm font-semibold text-slate-900">{goal.title}</p>
+              <p className="text-xs text-slate-500">Deadline: {new Date(goal.deadline).toLocaleDateString()}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+    </div>
+  );
 }
