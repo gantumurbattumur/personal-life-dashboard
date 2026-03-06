@@ -81,3 +81,28 @@ export interface DailySummary {
     total_income: number;
     habits_completed: number;
 }
+
+export interface SleepDailySummary {
+    date: string;
+    total_sleep_min: number;
+    total_time_in_bed_min: number;
+    deep_sleep_min: number;
+    rem_sleep_min: number;
+    awake_min: number;
+    sleep_efficiency: number | null;
+    bedtime: string | null;
+    wake_time: string | null;
+    bedtime_consistency_score: number;
+    sleep_score: number;
+}
+
+export interface RecoveryDaily {
+    date: string;
+    recovery_score: number;
+    sleep_component: number;
+    consistency_component: number;
+    training_load_component: number;
+    rhr_component: number;
+    hrv_component: number;
+    explanation: string;
+}

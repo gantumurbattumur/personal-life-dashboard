@@ -6,6 +6,8 @@ import type {
     MapPoint,
     MediaLog,
     MonthlyFinance,
+    RecoveryDaily,
+    SleepDailySummary,
     TodayDashboard,
     Transaction,
 } from "./types";
@@ -77,6 +79,14 @@ export async function getRecentTransactions(): Promise<Transaction[]> {
 
 export async function getStatistics(): Promise<Record<string, unknown>> {
     return fetcher<Record<string, unknown>>("/api/v1/dashboard/statistics", 120);
+}
+
+export async function getSleepDaily(days = 30): Promise<SleepDailySummary[]> {
+    return fetcher<SleepDailySummary[]>(`/api/v1/sleep/daily?days=${days}`, 60);
+}
+
+export async function getRecoveryDaily(days = 30): Promise<RecoveryDaily[]> {
+    return fetcher<RecoveryDaily[]>(`/api/v1/sleep/recovery?days=${days}`, 60);
 }
 
 export async function uploadJson(ingestPath: string, payload: unknown): Promise<unknown> {

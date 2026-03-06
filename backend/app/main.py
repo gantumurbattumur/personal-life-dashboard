@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from app.api.v1 import dashboard, ingest
+from app.api.v1 import dashboard, ingest, imports, sleep, workouts
 from app.database import engine
 
 
@@ -36,7 +36,10 @@ app.add_middleware(
 
 # Routers
 app.include_router(ingest.router, prefix="/api/v1/ingest", tags=["Ingest"])
+app.include_router(imports.router, prefix="/api/v1/import", tags=["Import"])
 app.include_router(dashboard.router, prefix="/api/v1/dashboard", tags=["Dashboard"])
+app.include_router(sleep.router, prefix="/api/v1/sleep", tags=["Sleep"])
+app.include_router(workouts.router, prefix="/api/v1/workouts", tags=["Workouts"])
 
 
 @app.get("/health")

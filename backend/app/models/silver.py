@@ -11,9 +11,11 @@ from sqlalchemy import (
     Date,
     DateTime,
     Float,
+    ForeignKey,
     Integer,
     Numeric,
     String,
+    Text,
     func,
     text,
 )
@@ -128,3 +130,105 @@ class Habit(Base):
     created_at: Mapped[datetime] = mapped_column(
         DateTime(timezone=True), server_default=func.now()
     )
+
+
+class SleepSession(Base):
+    __tablename__ = "sleep_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    source: Mapped[str] = mapped_column(String(64), default="apple_health")
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    duration_min: Mapped[int] = mapped_column(Integer, nullable=False)
+    time_in_bed_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    sleep_efficiency: Mapped[float | None] = mapped_column(Float, nullable=True)
+    bedtime: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    wake_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    imported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    raw_record_id: Mapped[uuid.UUID | None] = mapped_column(UUID(as_uuid=True), nullable=True, index=True)
+
+
+class SleepStage(Base):
+    __tablename__ = "sleep_stages"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    sleep_session_id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        ForeignKey("sleep_sessions.id", ondelete="CASCADE"),
+        index=True,
+    )
+    stage_name: Mapped[str] = mapped_column(String(16), index=True)
+    start_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    end_at: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+    duration_min: Mapped[int] = mapped_column(Integer, nullable=False)
+
+
+class WorkoutSession(Base):
+    __tablename__ = "workout_sessions"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    source: Mapped[str] = mapped_column(String(64), default="manual")
+    started_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), index=True)
+    ended_at: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    duration_min: Mapped[int | None] = mapped_column(Integer, nullable=True)
+    workout_type: Mapped[str | None] = mapped_column(String(64), nullable=True, index=True)
+    location: Mapped[str | None] = mapped_column(String(128), nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    session_rpe: Mapped[float | None] = mapped_column(Float, nullable=True)
+    calories_burned: Mapped[float | None] = mapped_column(Float, nullable=True)
+    avg_heart_rate: Mapped[float | None] = mapped_column(Float, nullable=True)
+    imported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class SleepDailySummary(Base):
+    __tablename__ = "sleep_daily_summary"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    date: Mapped[date] = mapped_column(Date, nullable=False, unique=True, index=True)
+    total_sleep_min: Mapped[int] = mapped_column(Integer, default=0)
+    total_time_in_bed_min: Mapped[int] = mapped_column(Integer, default=0)
+    deep_sleep_min: Mapped[int] = mapped_column(Integer, default=0)
+    rem_sleep_min: Mapped[int] = mapped_column(Integer, default=0)
+    awake_min: Mapped[int] = mapped_column(Integer, default=0)
+    sleep_efficiency: Mapped[float | None] = mapped_column(Float, nullable=True)
+    bedtime: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    wake_time: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
+    bedtime_consistency_score: Mapped[float] = mapped_column(Float, default=0.0)
+    sleep_score: Mapped[float] = mapped_column(Float, default=0.0)
+    source_priority: Mapped[str] = mapped_column(String(32), default="apple_health")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class RecoveryDaily(Base):
+    __tablename__ = "recovery_daily"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    date: Mapped[date] = mapped_column(Date, nullable=False, unique=True, index=True)
+    recovery_score: Mapped[float] = mapped_column(Float, default=0.0)
+    sleep_component: Mapped[float] = mapped_column(Float, default=0.0)
+    consistency_component: Mapped[float] = mapped_column(Float, default=0.0)
+    training_load_component: Mapped[float] = mapped_column(Float, default=0.0)
+    rhr_component: Mapped[float] = mapped_column(Float, default=0.0)
+    hrv_component: Mapped[float] = mapped_column(Float, default=0.0)
+    explanation: Mapped[str] = mapped_column(Text, default="")
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
