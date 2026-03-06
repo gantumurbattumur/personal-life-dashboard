@@ -16,13 +16,18 @@ from sqlalchemy import text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import async_session_factory
+from app.etl.bronze_to_silver import build_sleep_and_recovery_daily, build_workout_daily_summary
 from app.models.silver import (
+    BodyMetric,
     Goal,
     Habit,
     HealthMetric,
     LocationPing,
     MediaLog,
+    SleepSession,
+    SleepStage,
     Transaction,
+    WorkoutSession,
 )
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s")
@@ -203,6 +208,102 @@ async def seed_habits(session: AsyncSession) -> None:
     logger.info(f"Seeded {len(HABIT_NAMES)} habits")
 
 
+async def seed_sleep(session: AsyncSession) -> None:
+    """Seed nightly sleep sessions and stages for the last 30 days."""
+    for i in range(30):
+        d = TODAY - timedelta(days=29 - i)
+        bedtime_hour = random.choice([22, 23, 0])
+        bedtime_minute = random.randint(0, 59)
+        bedtime = datetime(d.year, d.month, d.day, bedtime_hour, bedtime_minute, tzinfo=timezone.utc)
+        if bedtime_hour == 0:
+            bedtime = bedtime + timedelta(days=1)
+        sleep_duration = random.randint(360, 530)
+        wake_time = bedtime + timedelta(minutes=sleep_duration)
+        time_in_bed = sleep_duration + random.randint(5, 45)
+        efficiency = round((sleep_duration / time_in_bed) * 100, 2)
+
+        sleep_session = SleepSession(
+            source="seed",
+            start_at=bedtime,
+            end_at=wake_time,
+            duration_min=sleep_duration,
+            time_in_bed_min=time_in_bed,
+            sleep_efficiency=efficiency,
+            bedtime=bedtime,
+            wake_time=wake_time,
+        )
+        session.add(sleep_session)
+        await session.flush()
+
+        deep = int(sleep_duration * random.uniform(0.14, 0.22))
+        rem = int(sleep_duration * random.uniform(0.18, 0.28))
+        awake = int(sleep_duration * random.uniform(0.03, 0.08))
+        core = max(sleep_duration - deep - rem - awake, 0)
+
+        cursor = bedtime
+        for stage_name, minutes in [
+            ("core", core),
+            ("deep", deep),
+            ("rem", rem),
+            ("awake", awake),
+        ]:
+            if minutes <= 0:
+                continue
+            stage_end = cursor + timedelta(minutes=minutes)
+            session.add(
+                SleepStage(
+                    sleep_session_id=sleep_session.id,
+                    stage_name=stage_name,
+                    start_at=cursor,
+                    end_at=stage_end,
+                    duration_min=minutes,
+                )
+            )
+            cursor = stage_end
+
+    logger.info("Seeded sleep sessions and stages")
+
+
+async def seed_workouts(session: AsyncSession) -> None:
+    """Seed workout sessions and body metrics for the last 30 days."""
+    workout_types = ["strength_training", "running", "cycling", "functional_strength"]
+
+    for i in range(30):
+        d = TODAY - timedelta(days=29 - i)
+
+        if random.random() < 0.55:
+            start = datetime(d.year, d.month, d.day, random.randint(6, 20), random.randint(0, 59), tzinfo=timezone.utc)
+            duration_min = random.randint(35, 95)
+            calories = round(random.uniform(220, 780), 2)
+            workout_type = random.choice(workout_types)
+
+            session.add(
+                WorkoutSession(
+                    source="seed",
+                    started_at=start,
+                    ended_at=start + timedelta(minutes=duration_min),
+                    duration_min=duration_min,
+                    workout_type=workout_type,
+                    location="gym",
+                    session_rpe=round(random.uniform(6.0, 9.0), 1),
+                    calories_burned=calories,
+                    avg_heart_rate=round(random.uniform(118, 162), 1),
+                )
+            )
+
+        if i % 3 == 0:
+            session.add(
+                BodyMetric(
+                    date=d,
+                    body_weight=round(78.5 - (i * 0.02) + random.uniform(-0.4, 0.4), 2),
+                    body_fat_pct=round(18.5 - (i * 0.01) + random.uniform(-0.2, 0.2), 2),
+                    source="seed",
+                )
+            )
+
+    logger.info("Seeded workouts and body metrics")
+
+
 async def seed() -> None:
     logger.info("Starting seed...")
 
@@ -213,6 +314,12 @@ async def seed() -> None:
         await seed_locations(session)
         await seed_goals(session)
         await seed_habits(session)
+        await seed_sleep(session)
+        await seed_workouts(session)
+
+        await session.flush()
+        await build_sleep_and_recovery_daily(session)
+        await build_workout_daily_summary(session)
 
         await session.commit()
         logger.info("All Silver data committed")

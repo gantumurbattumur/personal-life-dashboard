@@ -16,3 +16,6 @@ async def refresh_gold_views(session: AsyncSession) -> None:
     await session.execute(
         text("REFRESH MATERIALIZED VIEW CONCURRENTLY gold_monthly_finance")
     )
+    await session.execute(
+        text("REFRESH MATERIALIZED VIEW CONCURRENTLY gold_gym_weekly_volume")
+    )

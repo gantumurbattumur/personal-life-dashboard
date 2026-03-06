@@ -10,6 +10,9 @@ import type {
     SleepDailySummary,
     TodayDashboard,
     Transaction,
+    WorkoutDailySummary,
+    WorkoutKpi,
+    WorkoutSession,
 } from "./types";
 
 /**
@@ -87,6 +90,18 @@ export async function getSleepDaily(days = 30): Promise<SleepDailySummary[]> {
 
 export async function getRecoveryDaily(days = 30): Promise<RecoveryDaily[]> {
     return fetcher<RecoveryDaily[]>(`/api/v1/sleep/recovery?days=${days}`, 60);
+}
+
+export async function getWorkoutSessions(days = 30): Promise<WorkoutSession[]> {
+    return fetcher<WorkoutSession[]>(`/api/v1/workouts/sessions?days=${days}`, 60);
+}
+
+export async function getWorkoutDaily(days = 30): Promise<WorkoutDailySummary[]> {
+    return fetcher<WorkoutDailySummary[]>(`/api/v1/workouts/daily?days=${days}`, 60);
+}
+
+export async function getWorkoutKpi(days = 30): Promise<WorkoutKpi> {
+    return fetcher<WorkoutKpi>(`/api/v1/workouts/kpi?days=${days}`, 60);
 }
 
 export async function uploadJson(ingestPath: string, payload: unknown): Promise<unknown> {

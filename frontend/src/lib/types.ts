@@ -106,3 +106,34 @@ export interface RecoveryDaily {
     hrv_component: number;
     explanation: string;
 }
+
+export interface WorkoutSession {
+    id: string;
+    source: string;
+    started_at: string;
+    ended_at: string | null;
+    duration_min: number | null;
+    workout_type: string | null;
+    location: string | null;
+    notes: string | null;
+    session_rpe: number | null;
+    calories_burned: number | null;
+    avg_heart_rate: number | null;
+}
+
+export interface WorkoutDailySummary {
+    date: string;
+    workouts_count: number;
+    total_duration_min: number;
+    total_calories_burned: number;
+    training_load: number;
+}
+
+export interface WorkoutKpi {
+    days: number;
+    workouts_count: number;
+    total_duration_min: number;
+    avg_duration_min: number;
+    total_calories_burned: number;
+    consistency_pct: number;
+}

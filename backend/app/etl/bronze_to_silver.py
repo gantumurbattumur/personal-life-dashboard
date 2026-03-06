@@ -26,6 +26,7 @@ from app.models.silver import (
     SleepSession,
     SleepStage,
     Transaction,
+    WorkoutDailySummary,
     WorkoutSession,
 )
 
@@ -507,5 +508,48 @@ async def build_sleep_and_recovery_daily(session: AsyncSession) -> int:
                     explanation=explanation,
                 )
             )
+
+    return changed
+
+
+async def build_workout_daily_summary(session: AsyncSession) -> int:
+    """Aggregate workout sessions into workout_daily_summary."""
+    workout_rows = (
+        await session.execute(select(WorkoutSession).order_by(WorkoutSession.started_at.asc()))
+    ).scalars().all()
+
+    if not workout_rows:
+        return 0
+
+    by_day: dict[date, list[WorkoutSession]] = defaultdict(list)
+    for row in workout_rows:
+        by_day[row.started_at.date()].append(row)
+
+    changed = 0
+    for day, rows in by_day.items():
+        workouts_count = len(rows)
+        total_duration_min = sum(item.duration_min or 0 for item in rows)
+        total_calories_burned = float(sum(item.calories_burned or 0 for item in rows))
+        training_load = round(total_duration_min * 0.6 + total_calories_burned * 0.05, 2)
+
+        existing = await session.scalar(
+            select(WorkoutDailySummary).where(WorkoutDailySummary.date == day)
+        )
+        if existing:
+            existing.workouts_count = workouts_count
+            existing.total_duration_min = total_duration_min
+            existing.total_calories_burned = total_calories_burned
+            existing.training_load = training_load
+        else:
+            session.add(
+                WorkoutDailySummary(
+                    date=day,
+                    workouts_count=workouts_count,
+                    total_duration_min=total_duration_min,
+                    total_calories_burned=total_calories_burned,
+                    training_load=training_load,
+                )
+            )
+        changed += 1
 
     return changed

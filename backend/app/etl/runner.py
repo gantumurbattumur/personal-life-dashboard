@@ -9,6 +9,7 @@ import logging
 
 from app.database import async_session_factory
 from app.etl.bronze_to_silver import (
+    build_workout_daily_summary,
     build_sleep_and_recovery_daily,
     transform_apple_health_records,
     transform_finance,
@@ -36,6 +37,9 @@ async def run_etl() -> None:
         sleep_summary_count = await build_sleep_and_recovery_daily(session)
         logger.info(f"Sleep/recovery daily summaries built: {sleep_summary_count}")
 
+        workout_summary_count = await build_workout_daily_summary(session)
+        logger.info(f"Workout daily summaries built: {workout_summary_count}")
+
         finance_count = await transform_finance(session)
         logger.info(f"Finance: {finance_count} rows transformed")
 
@@ -55,6 +59,7 @@ async def run_etl() -> None:
             health_count
             + apple_health_count
             + sleep_summary_count
+            + workout_summary_count
             + finance_count
             + media_count
             + location_count

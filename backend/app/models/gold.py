@@ -36,3 +36,16 @@ class GoldMonthlyFinance(Base):
     month: Mapped[str] = mapped_column(String(7), primary_key=True)  # 'YYYY-MM'
     income: Mapped[float] = mapped_column(Float, default=0.0)
     expenses: Mapped[float] = mapped_column(Float, default=0.0)
+
+
+class GoldGymWeeklyVolume(Base):
+    """Materialized view: weekly workout volume and load."""
+
+    __tablename__ = "gold_gym_weekly_volume"
+    __table_args__ = {"info": {"is_view": True}}
+
+    week_start: Mapped[date] = mapped_column(Date, primary_key=True)
+    workouts_count: Mapped[int] = mapped_column(Integer, default=0)
+    total_duration_min: Mapped[int] = mapped_column(Integer, default=0)
+    total_calories_burned: Mapped[float] = mapped_column(Float, default=0.0)
+    training_load: Mapped[float] = mapped_column(Float, default=0.0)

@@ -1,16 +1,22 @@
-import HealthTrends from "@/components/charts/HealthTrends";
-import { getHealthTrends } from "@/lib/api";
-import type { HealthMetric } from "@/lib/types";
+import { getWorkoutDaily, getWorkoutKpi, getWorkoutSessions } from "@/lib/api";
+import type { WorkoutDailySummary, WorkoutKpi, WorkoutSession } from "@/lib/types";
 
 export default async function GymPage() {
-    const health: HealthMetric[] = await getHealthTrends().catch(() => [] as HealthMetric[]);
+    const [kpi, daily, sessions]: [WorkoutKpi, WorkoutDailySummary[], WorkoutSession[]] = await Promise.all([
+        getWorkoutKpi(30).catch(() => ({
+            days: 30,
+            workouts_count: 0,
+            total_duration_min: 0,
+            avg_duration_min: 0,
+            total_calories_burned: 0,
+            consistency_pct: 0,
+        } as WorkoutKpi)),
+        getWorkoutDaily(14).catch(() => [] as WorkoutDailySummary[]),
+        getWorkoutSessions(10).catch(() => [] as WorkoutSession[]),
+    ]);
 
-    const totalCalories = health.reduce((sum, row) => sum + row.active_calories, 0);
-    const avgSteps = health.length ? Math.round(health.reduce((sum, row) => sum + row.steps, 0) / health.length) : 0;
-    const consistency = Math.min(
-        100,
-        Math.round((health.filter((row) => row.steps >= 7000).length / Math.max(health.length, 1)) * 100)
-    );
+    const recentWorkout = sessions[0];
+    const peakLoad = daily.length ? Math.max(...daily.map((item) => item.training_load), 0) : 0;
 
     return (
         <div className="space-y-6">
@@ -22,23 +28,38 @@ export default async function GymPage() {
 
             <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <p className="text-xs uppercase text-slate-500">Total Active Calories</p>
-                    <p className="mt-2 text-3xl font-semibold text-slate-900">{totalCalories.toLocaleString()}</p>
+                    <p className="text-xs uppercase text-slate-500">Workouts (30d)</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-900">{kpi.workouts_count}</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
-                    <p className="text-xs uppercase text-slate-500">Average Daily Steps</p>
-                    <p className="mt-2 text-3xl font-semibold text-slate-900">{avgSteps.toLocaleString()}</p>
+                    <p className="text-xs uppercase text-slate-500">Training Duration</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-900">{Math.round(kpi.total_duration_min / 60)}h</p>
+                    <p className="mt-1 text-xs text-slate-500">Avg {Math.round(kpi.avg_duration_min)} min/session</p>
                 </div>
                 <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
                     <p className="text-xs uppercase text-slate-500">Training Consistency</p>
-                    <p className="mt-2 text-3xl font-semibold text-slate-900">{consistency}%</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-900">{Math.round(kpi.consistency_pct)}%</p>
                     <div className="mt-2 h-2 rounded-full bg-slate-200">
-                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${consistency}%` }} />
+                        <div className="h-full rounded-full bg-emerald-500" style={{ width: `${Math.min(100, Math.max(0, kpi.consistency_pct))}%` }} />
                     </div>
                 </div>
             </section>
 
-            <HealthTrends data={health} />
+            <section className="grid grid-cols-1 gap-4 md:grid-cols-3">
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs uppercase text-slate-500">Calories Burned (30d)</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-900">{Math.round(kpi.total_calories_burned).toLocaleString()}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs uppercase text-slate-500">Peak Daily Training Load</p>
+                    <p className="mt-2 text-3xl font-semibold text-slate-900">{Math.round(peakLoad)}</p>
+                </div>
+                <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+                    <p className="text-xs uppercase text-slate-500">Last Workout</p>
+                    <p className="mt-2 text-lg font-semibold text-slate-900">{recentWorkout?.workout_type ?? "No recent workout"}</p>
+                    <p className="mt-1 text-xs text-slate-500">{recentWorkout?.duration_min ? `${recentWorkout.duration_min} min` : ""}</p>
+                </div>
+            </section>
         </div>
     );
 }

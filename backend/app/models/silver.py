@@ -192,6 +192,38 @@ class WorkoutSession(Base):
     imported_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
 
+class WorkoutDailySummary(Base):
+    __tablename__ = "workout_daily_summary"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    date: Mapped[date] = mapped_column(Date, nullable=False, unique=True, index=True)
+    workouts_count: Mapped[int] = mapped_column(Integer, default=0)
+    total_duration_min: Mapped[int] = mapped_column(Integer, default=0)
+    total_calories_burned: Mapped[float] = mapped_column(Float, default=0.0)
+    training_load: Mapped[float] = mapped_column(Float, default=0.0)
+    updated_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now())
+
+
+class BodyMetric(Base):
+    __tablename__ = "body_metrics"
+
+    id: Mapped[uuid.UUID] = mapped_column(
+        UUID(as_uuid=True),
+        primary_key=True,
+        server_default=text("gen_random_uuid()"),
+    )
+    date: Mapped[date] = mapped_column(Date, nullable=False, index=True)
+    body_weight: Mapped[float | None] = mapped_column(Float, nullable=True)
+    body_fat_pct: Mapped[float | None] = mapped_column(Float, nullable=True)
+    notes: Mapped[str | None] = mapped_column(Text, nullable=True)
+    source: Mapped[str] = mapped_column(String(64), default="manual")
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
 class SleepDailySummary(Base):
     __tablename__ = "sleep_daily_summary"
 
