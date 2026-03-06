@@ -4,46 +4,44 @@ interface GoalTrackerProps {
     goals: Goal[];
 }
 
-function getProgressColor(pct: number): string {
-    if (pct >= 75) return "bg-emerald-500";
-    if (pct >= 25) return "bg-yellow-500";
-    return "bg-red-500";
+function barColor(progress: number): string {
+    if (progress >= 80) return "bg-emerald-500";
+    if (progress >= 45) return "bg-amber-500";
+    return "bg-rose-500";
 }
 
 export default function GoalTracker({ goals }: GoalTrackerProps) {
     return (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl p-5">
-            <h3 className="text-sm font-medium text-gray-400 mb-4">Yearly Goals</h3>
-            <div className="space-y-4">
-                {goals.map((goal) => (
-                    <div key={goal.id}>
-                        <div className="flex items-center justify-between mb-1.5">
-                            <span className="text-sm text-gray-200">{goal.title}</span>
-                            <span className="text-xs text-gray-400">
-                                {goal.current.toLocaleString()}/{goal.target.toLocaleString()} {goal.unit}
-                            </span>
-                        </div>
-                        <div className="relative h-2.5 bg-gray-800 rounded-full overflow-hidden">
-                            <div
-                                className={`absolute left-0 top-0 h-full rounded-full transition-all ${getProgressColor(goal.progress_pct)}`}
-                                style={{ width: `${Math.min(goal.progress_pct, 100)}%` }}
-                            />
-                        </div>
-                        <div className="flex items-center justify-between mt-1">
-                            <span className="text-xs text-gray-500">
-                                Due {new Date(goal.deadline).toLocaleDateString("en-US", { month: "short", day: "numeric" })}
-                            </span>
-                            <span className="text-xs font-medium text-gray-400">
-                                {goal.progress_pct}%
-                            </span>
-                        </div>
-                    </div>
-                ))}
-
-                {goals.length === 0 && (
-                    <p className="text-sm text-gray-500 text-center py-4">No goals set yet</p>
-                )}
+        <div className="rounded-2xl border border-slate-200 bg-white p-5 shadow-sm">
+            <div className="mb-4 flex items-center justify-between">
+                <h3 className="text-base font-semibold text-slate-900">Goal Tracker</h3>
+                <span className="text-xs text-slate-500">This year</span>
             </div>
+
+            <div className="space-y-4">
+                {goals.map((goal) => {
+                    const progress = Math.min(goal.progress_pct, 100);
+                    return (
+                        <div key={goal.id} className="rounded-xl border border-slate-100 bg-slate-50 p-3">
+                            <div className="mb-1.5 flex items-center justify-between">
+                                <p className="text-sm font-medium text-slate-800">{goal.title}</p>
+                                <p className="text-xs text-slate-500">{progress.toFixed(1)}%</p>
+                            </div>
+                            <div className="h-2 overflow-hidden rounded-full bg-slate-200">
+                                <div className={`h-full rounded-full ${barColor(progress)}`} style={{ width: `${progress}%` }} />
+                            </div>
+                            <div className="mt-1.5 flex items-center justify-between text-xs text-slate-500">
+                                <span>
+                                    {goal.current.toLocaleString()} / {goal.target.toLocaleString()} {goal.unit}
+                                </span>
+                                <span>{new Date(goal.deadline).toLocaleDateString()}</span>
+                            </div>
+                        </div>
+                    );
+                })}
+            </div>
+
+            {goals.length === 0 && <p className="py-4 text-center text-sm text-slate-500">No goals yet.</p>}
         </div>
     );
 }
