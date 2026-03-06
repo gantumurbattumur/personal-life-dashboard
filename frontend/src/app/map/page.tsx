@@ -1,5 +1,6 @@
 import { getMapPoints } from "@/lib/api";
 import dynamic from "next/dynamic";
+import type { MapPoint } from "@/lib/types";
 
 const WorldMap = dynamic(() => import("@/components/map/WorldMap"), {
     ssr: false,
@@ -11,12 +12,7 @@ const WorldMap = dynamic(() => import("@/components/map/WorldMap"), {
 });
 
 export default async function MapPage() {
-    let points;
-    try {
-        points = await getMapPoints();
-    } catch {
-        points = [];
-    }
+    const points: MapPoint[] = await getMapPoints().catch(() => [] as MapPoint[]);
 
     return (
         <div className="space-y-4">

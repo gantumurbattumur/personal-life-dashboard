@@ -74,3 +74,43 @@ export async function getHabitCalendar(): Promise<HabitCalendarDay[]> {
 export async function getRecentTransactions(): Promise<Transaction[]> {
     return fetcher<Transaction[]>("/api/v1/dashboard/transactions/recent", 60);
 }
+
+export async function getStatistics(): Promise<Record<string, unknown>> {
+    return fetcher<Record<string, unknown>>("/api/v1/dashboard/statistics", 120);
+}
+
+export async function uploadJson(ingestPath: string, payload: unknown): Promise<unknown> {
+    const url = `${getBaseUrl()}${ingestPath}`;
+    const res = await fetch(url, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+    });
+    if (!res.ok) {
+        throw new Error(`Upload failed (${res.status})`);
+    }
+    return res.json();
+}
+
+export async function uploadCsv(ingestPath: string, file: File): Promise<unknown> {
+    const url = `${getBaseUrl()}${ingestPath}`;
+    const formData = new FormData();
+    formData.append("file", file);
+    const res = await fetch(url, {
+        method: "POST",
+        body: formData,
+    });
+    if (!res.ok) {
+        throw new Error(`Upload failed (${res.status})`);
+    }
+    return res.json();
+}
+
+export async function fetchApiData(apiPath: string): Promise<unknown> {
+    const url = `${getBaseUrl()}${apiPath}`;
+    const res = await fetch(url, { cache: "no-store" });
+    if (!res.ok) {
+        throw new Error(`Fetch failed (${res.status})`);
+    }
+    return res.json();
+}

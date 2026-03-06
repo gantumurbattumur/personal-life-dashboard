@@ -1,20 +1,15 @@
 import { getGoals, getHabits, getHabitCalendar } from "@/lib/api";
 import GoalTracker from "@/components/GoalTracker";
 import LifeCalendar from "@/components/LifeCalendar";
+import RawApiConsole from "@/components/category/RawApiConsole";
+import type { Goal, Habit, HabitCalendarDay } from "@/lib/types";
 
 export default async function GoalsPage() {
-    let goals, habits, calendar;
-    try {
-        [goals, habits, calendar] = await Promise.all([
-            getGoals(),
-            getHabits(),
-            getHabitCalendar(),
-        ]);
-    } catch {
-        goals = [];
-        habits = [];
-        calendar = [];
-    }
+    const [goals, habits, calendar]: [Goal[], Habit[], HabitCalendarDay[]] = await Promise.all([
+        getGoals().catch(() => [] as Goal[]),
+        getHabits().catch(() => [] as Habit[]),
+        getHabitCalendar().catch(() => [] as HabitCalendarDay[]),
+    ]);
 
     return (
         <div className="space-y-6">
@@ -22,6 +17,12 @@ export default async function GoalsPage() {
                 <h1 className="text-2xl font-bold text-white">Goals & Habits</h1>
                 <p className="text-sm text-gray-400 mt-1">Track your yearly goals and daily habits</p>
             </div>
+
+            <RawApiConsole
+                category="Goals"
+                uploadMode="none"
+                apiPath="/api/v1/dashboard/goals"
+            />
 
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
                 {/* Goals */}

@@ -3,7 +3,7 @@
 from datetime import date, datetime, timedelta, timezone
 
 from fastapi import APIRouter, Depends
-from sqlalchemy import func, select, text
+from sqlalchemy import case, func, select, text
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.database import get_db
@@ -71,12 +71,14 @@ async def get_today_summary(db: AsyncSession = Depends(get_db)):
 
     finance = await db.execute(
         select(
-            func.coalesce(func.sum(
-                func.case((Transaction.is_expense == True, Transaction.amount), else_=0)  # noqa: E712
-            ), 0).label("spent"),
-            func.coalesce(func.sum(
-                func.case((Transaction.is_expense == False, Transaction.amount), else_=0)  # noqa: E712
-            ), 0).label("income"),
+            func.coalesce(
+                func.sum(case((Transaction.is_expense == True, Transaction.amount), else_=0)),  # noqa: E712
+                0,
+            ).label("spent"),
+            func.coalesce(
+                func.sum(case((Transaction.is_expense == False, Transaction.amount), else_=0)),  # noqa: E712
+                0,
+            ).label("income"),
         ).where(Transaction.date == today)
     )
     fin = finance.one()
@@ -204,3 +206,55 @@ async def get_recent_transactions(db: AsyncSession = Depends(get_db)):
         .limit(30)
     )
     return result.scalars().all()
+
+
+@router.get("/statistics")
+async def get_yearly_statistics(db: AsyncSession = Depends(get_db)):
+    """Yearly aggregate stats for the statistics category."""
+    start_of_year = date(date.today().year, 1, 1)
+
+    total_steps_result = await db.execute(
+        select(func.coalesce(func.sum(HealthMetric.steps), 0)).where(
+            HealthMetric.date >= start_of_year
+        )
+    )
+    total_steps = int(total_steps_result.scalar() or 0)
+
+    avg_sleep_result = await db.execute(
+        select(func.coalesce(func.avg(HealthMetric.sleep_minutes), 0)).where(
+            HealthMetric.date >= start_of_year
+        )
+    )
+    avg_sleep_minutes = float(avg_sleep_result.scalar() or 0)
+
+    expenses_result = await db.execute(
+        select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+            Transaction.date >= start_of_year,
+            Transaction.is_expense == True,  # noqa: E712
+        )
+    )
+    income_result = await db.execute(
+        select(func.coalesce(func.sum(Transaction.amount), 0)).where(
+            Transaction.date >= start_of_year,
+            Transaction.is_expense == False,  # noqa: E712
+        )
+    )
+    total_expenses = float(expenses_result.scalar() or 0)
+    total_income = float(income_result.scalar() or 0)
+
+    completed_habits_result = await db.execute(
+        select(func.count()).select_from(Habit).where(Habit.last_completed.is_not(None))
+    )
+
+    media_count_result = await db.execute(select(func.count()).select_from(MediaLog))
+
+    return {
+        "year": date.today().year,
+        "total_steps": total_steps,
+        "average_sleep_minutes": round(avg_sleep_minutes, 2),
+        "total_expenses": total_expenses,
+        "total_income": total_income,
+        "net_savings": total_income - total_expenses,
+        "habits_with_completions": int(completed_habits_result.scalar() or 0),
+        "media_items_logged": int(media_count_result.scalar() or 0),
+    }

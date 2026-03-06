@@ -1,17 +1,12 @@
 import { getFinanceCharts, getRecentTransactions } from "@/lib/api";
 import FinanceChart from "@/components/charts/FinanceChart";
+import type { MonthlyFinance, Transaction } from "@/lib/types";
 
 export default async function FinancePage() {
-    let finance, transactions;
-    try {
-        [finance, transactions] = await Promise.all([
-            getFinanceCharts(),
-            getRecentTransactions(),
-        ]);
-    } catch {
-        finance = [];
-        transactions = [];
-    }
+    const [finance, transactions]: [MonthlyFinance[], Transaction[]] = await Promise.all([
+        getFinanceCharts().catch(() => [] as MonthlyFinance[]),
+        getRecentTransactions().catch(() => [] as Transaction[]),
+    ]);
 
     // Summary stats
     const totalIncome = finance.reduce((s, f) => s + f.income, 0);

@@ -1,14 +1,10 @@
 import { getHealthTrends } from "@/lib/api";
 import HealthTrends from "@/components/charts/HealthTrends";
 import MetricCard from "@/components/ui/MetricCard";
+import type { HealthMetric } from "@/lib/types";
 
 export default async function HealthPage() {
-    let health;
-    try {
-        health = await getHealthTrends();
-    } catch {
-        health = [];
-    }
+    const health: HealthMetric[] = await getHealthTrends().catch(() => [] as HealthMetric[]);
 
     // Compute averages
     const avg = {

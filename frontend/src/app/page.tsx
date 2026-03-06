@@ -1,30 +1,6 @@
-import {
-    getTodaySummary,
-    getFinanceCharts,
-    getHealthTrends,
-    getGoals,
-    getHabits,
-    getRecentMedia,
-    getMapPoints,
-    getHabitCalendar,
-} from "@/lib/api";
-
 import MetricCard from "@/components/ui/MetricCard";
-import FinanceChart from "@/components/charts/FinanceChart";
-import HealthTrends from "@/components/charts/HealthTrends";
-import GoalTracker from "@/components/GoalTracker";
-import MediaFeed from "@/components/MediaFeed";
-import LifeCalendar from "@/components/LifeCalendar";
-import dynamic from "next/dynamic";
-
-const WorldMap = dynamic(() => import("@/components/map/WorldMap"), {
-    ssr: false,
-    loading: () => (
-        <div className="bg-gray-900 border border-gray-800 rounded-xl h-[400px] flex items-center justify-center">
-            <span className="text-gray-500">Loading map...</span>
-        </div>
-    ),
-});
+import { getTodaySummary } from "@/lib/api";
+import Link from "next/link";
 
 function formatSleep(minutes: number): string {
     const h = Math.floor(minutes / 60);
@@ -33,20 +9,10 @@ function formatSleep(minutes: number): string {
 }
 
 export default async function DashboardPage() {
-    let today, finance, health, goals, habits, media, mapPoints, calendar;
+    let today;
 
     try {
-        [today, finance, health, goals, habits, media, mapPoints, calendar] =
-            await Promise.all([
-                getTodaySummary(),
-                getFinanceCharts(),
-                getHealthTrends(),
-                getGoals(),
-                getHabits(),
-                getRecentMedia(),
-                getMapPoints(),
-                getHabitCalendar(),
-            ]);
+        today = await getTodaySummary();
     } catch (error) {
         // Fallback: render error state
         return (
@@ -72,20 +38,11 @@ export default async function DashboardPage() {
 
     return (
         <div className="space-y-6">
-            {/* Header */}
             <div>
-                <h1 className="text-2xl font-bold text-white">Dashboard</h1>
-                <p className="text-sm text-gray-400 mt-1">
-                    {new Date().toLocaleDateString("en-US", {
-                        weekday: "long",
-                        year: "numeric",
-                        month: "long",
-                        day: "numeric",
-                    })}
-                </p>
+                <h1 className="text-2xl font-bold text-white">LifeOS Categories</h1>
+                <p className="text-sm text-gray-400 mt-1">Choose a category from the menu or cards below.</p>
             </div>
 
-            {/* Hero Metrics — Top Row */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                 <MetricCard
                     title="Today's Steps"
@@ -135,30 +92,23 @@ export default async function DashboardPage() {
                 />
             </div>
 
-            {/* Row 2: Finance Chart + Goal Tracker */}
-            <div className="grid grid-cols-1 lg:grid-cols-3 gap-4">
-                <div className="lg:col-span-2">
-                    <FinanceChart data={finance} />
-                </div>
-                <div>
-                    <GoalTracker goals={goals} />
-                </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4">
+                {[
+                    ["Sleep", "/sleep"],
+                    ["Gym", "/gym"],
+                    ["Money", "/money"],
+                    ["Habits", "/habits"],
+                    ["Statistics", "/statistics"],
+                    ["Goals", "/goals"],
+                    ["Calendar", "/calendar"],
+                    ["Movies", "/movies"],
+                ].map(([name, href]) => (
+                    <Link key={name} href={href} className="rounded-xl border border-gray-800 bg-gray-900 p-5 hover:border-brand-500/60 transition-colors">
+                        <p className="text-white font-medium">{name}</p>
+                        <p className="text-xs text-gray-500 mt-1">Raw upload + API data view</p>
+                    </Link>
+                ))}
             </div>
-
-            {/* Row 3: Health Trends + Media Feed */}
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-                <HealthTrends data={health} />
-                <MediaFeed media={media} />
-            </div>
-
-            {/* Row 4: World Map */}
-            <div>
-                <h3 className="text-sm font-medium text-gray-400 mb-3">Location History</h3>
-                <WorldMap points={mapPoints} height="400px" />
-            </div>
-
-            {/* Row 5: Life Calendar */}
-            <LifeCalendar data={calendar} maxHabits={habits.length || 5} />
         </div>
     );
 }
